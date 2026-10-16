@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SongHub SongList</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- External Songs Database -->
+    <script src="songs_bundle.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fdf4f8',
+                            100: '#fbe8f1',
+                            500: '#ec4899',
+                            600: '#db2777',
+                            700: '#be185d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        mark { background-color: #fbcfe8; color: #9d174d; border-radius: 2px; padding: 0 2px; }
+        .dark mark { background-color: #831843; color: #fbcfe8; }
+
+        /* Font size dynamic scaling classes */
+        .font-size-sm .song-row { font-size: 0.8125rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .font-size-sm .song-no { font-size: 0.875rem; }
+        
+        .font-size-md .song-row { font-size: 0.9375rem; padding-top: 0.875rem; padding-bottom: 0.875rem; }
+        .font-size-md .song-no { font-size: 1rem; }
+
+        .font-size-lg .song-row { font-size: 1.0625rem; padding-top: 1.125rem; padding-bottom: 1.125rem; }
+        .font-size-lg .song-no { font-size: 1.1875rem; }
+
+        .font-size-xl .song-row { font-size: 1.25rem; padding-top: 1.375rem; padding-bottom: 1.375rem; }
+        .font-size-xl .song-no { font-size: 1.375rem; }
+    </style>
+</head>
+<body class="h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200 flex flex-col font-size-md" id="app-body">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-pink-500 to-rose-500 text-white p-2.5 rounded-xl shadow-md shadow-pink-500/20 flex items-center justify-center">
+                    <i class="fa-solid fa-microphone-lines text-lg"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 class="font-bold text-lg leading-tight tracking-tight bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">SongHub SongList</h1>
+                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">Credits to: jpdcs</span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">SongList from SongHub App</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <!-- Status badge -->
+                <div id="db-status" class="hidden md:flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="db-status-text">Ready</span>
+                </div>
+
+                <!-- Favorites Toggle button -->
+                <button onclick="toggleFavoritesFilter()" id="favorites-filter-btn" class="relative p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-600 dark:text-slate-300" title="View Favorites">
+                    <i class="fa-solid fa-heart text-pink-500"></i>
+                    <span id="favorites-badge" class="absolute -top-1 -right-1 bg-pink-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm hidden">0</span>
+                </button>
+
+                <!-- Settings button -->
+                <button onclick="openSettingsModal()" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-600 dark:text-slate-300" title="Settings">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+
+                <!-- Dark mode toggle -->
+                <button onclick="toggleDarkMode()" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-600 dark:text-slate-300" title="Toggle Theme">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+                </button>
+
+                <!-- Upload trigger button -->
+                <button onclick="openUploadModal()" class="flex items-center space-x-2 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-medium px-3.5 py-2 rounded-xl shadow-lg shadow-pink-500/25 transition-all text-sm">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span class="hidden sm:inline">Load CSV</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col overflow-hidden">
+        
+        <!-- Search & Filter Controls -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm mb-6 shrink-0">
+            <div class="relative flex items-center">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 text-slate-400 text-lg pointer-events-none"></i>
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    placeholder="Search by song title, artist name, or song number (e.g., '1', 'Helloween', 'Yesterday')..." 
+                    class="w-full pl-12 pr-12 py-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-pink-500 text-base transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                    oninput="handleSearchInput(event)"
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+                <button id="clear-search" onclick="clearSearchBox()" class="absolute right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hidden" title="Clear Search">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between mt-3 text-xs text-slate-500 dark:text-slate-400 px-1 gap-2">
+                <div class="flex items-center space-x-4">
+                    <span id="results-count">Loading songbook index...</span>
+                    <span class="hidden md:inline">&bull; Embedded bundle from SongHub App</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="openUploadModal()" class="text-pink-500 hover:underline font-medium">Import Custom CSV</button>
+                    <span>&bull;</span>
+                    <button onclick="openSettingsModal()" class="text-slate-600 dark:text-slate-300 hover:underline font-medium">Preferences</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Songs List Container -->
+        <div class="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm flex flex-col overflow-hidden relative">
+            
+            <!-- Table Header with Sorting -->
+            <div class="grid grid-cols-12 bg-slate-50 dark:bg-slate-950/50 border-b border-slate-200 dark:border-slate-800 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0 select-none">
+                <div class="col-span-3 sm:col-span-2 cursor-pointer hover:text-slate-800 dark:hover:text-slate-200 flex items-center space-x-1" onclick="changeSort('no')">
+                    <span>Song No.</span>
+                    <i id="sort-icon-no" class="fa-solid fa-sort text-[10px]"></i>
+                </div>
+                <div class="col-span-5 sm:col-span-5 cursor-pointer hover:text-slate-800 dark:hover:text-slate-200 flex items-center space-x-1" onclick="changeSort('title')">
+                    <span>Title</span>
+                    <i id="sort-icon-title" class="fa-solid fa-sort text-[10px]"></i>
+                </div>
+                <div class="col-span-3 sm:col-span-4 cursor-pointer hover:text-slate-800 dark:hover:text-slate-200 flex items-center space-x-1" onclick="changeSort('artist')">
+                    <span>Artist</span>
+                    <i id="sort-icon-artist" class="fa-solid fa-sort text-[10px]"></i>
+                </div>
+                <div class="col-span-1 text-right">Action</div>
+            </div>
+
+            <!-- Scroll Area -->
+            <div id="songs-scroll-container" class="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 relative">
+                <!-- Empty State -->
+                <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center hidden">
+                    <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-4 text-xl">
+                        <i class="fa-solid fa-music"></i>
+                    </div>
+                    <h3 class="font-bold text-base text-slate-700 dark:text-slate-300 mb-1">No songs found</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 max-w-sm mb-4">Try checking your spelling, searching for a different keyword, or load your custom CSV songbook.</p>
+                    <button onclick="openUploadModal()" class="px-4 py-2 bg-pink-500 text-white rounded-xl text-sm font-medium hover:bg-pink-600 transition-all">Upload CSV Songbook</button>
+                </div>
+
+                <!-- Loading State Spinner -->
+                <div id="loading-state" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm z-10">
+                    <div class="w-12 h-12 rounded-full border-4 border-pink-500 border-t-transparent animate-spin mb-4"></div>
+                    <h3 id="loading-title" class="font-bold text-base text-slate-700 dark:text-slate-300 mb-1">Pre-loading SongBundle Database...</h3>
+                    <p id="loading-subtitle" class="text-sm text-slate-500 dark:text-slate-400">Preparing SongHub SongList database for instant searching.</p>
+                </div>
+
+                <!-- List content will be injected here -->
+                <div id="songs-list-body"></div>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div id="pagination-footer" class="border-t border-slate-200 dark:border-slate-800 px-4 py-3 bg-slate-50 dark:bg-slate-950/50 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
+                <span id="pagination-info">Showing results</span>
+                <div class="flex items-center space-x-2">
+                    <button id="prev-page-btn" onclick="changePage(-1)" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition-all">Previous</button>
+                    <span id="page-indicator" class="px-2 font-medium">Page 1 of 1</span>
+                    <button id="next-page-btn" onclick="changePage(1)" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition-all">Next</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer Attribution -->
+    <footer class="border-t border-slate-200 dark:border-slate-800 py-3 bg-white/50 dark:bg-slate-900/50 text-center text-xs text-slate-500 dark:text-slate-400 shrink-0">
+        SongList from SongHub App &bull; <span class="font-semibold text-slate-700 dark:text-slate-300">Credits to: jpdcs</span>
+    </footer>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeSettingsModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center transition-all">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center">
+                    <i class="fa-solid fa-sliders text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-lg text-slate-900 dark:text-white">SongList Preferences</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Customize display, fonts, and search</p>
+                </div>
+            </div>
+
+            <div class="space-y-5 text-sm">
+                <!-- Font Size Adjustment -->
+                <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="font-semibold text-slate-800 dark:text-slate-200 flex items-center space-x-2">
+                            <i class="fa-solid fa-text-height text-pink-500"></i>
+                            <span>Text Font Size</span>
+                        </label>
+                        <span id="font-size-label" class="text-xs font-bold text-pink-500 uppercase tracking-wider">Medium</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1.5 mt-2">
+                        <button onclick="setFontSize('sm')" id="font-btn-sm" class="py-2 px-1 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800 text-center transition-all">Compact</button>
+                        <button onclick="setFontSize('md')" id="font-btn-md" class="py-2 px-1 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800 text-center transition-all">Medium</button>
+                        <button onclick="setFontSize('lg')" id="font-btn-lg" class="py-2 px-1 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800 text-center transition-all">Large</button>
+                        <button onclick="setFontSize('xl')" id="font-btn-xl" class="py-2 px-1 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800 text-center transition-all">Extra Large</button>
+                    </div>
+                </div>
+
+                <!-- Rows Per Page -->
+                <div>
+                    <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Rows Per Page</label>
+                    <select id="setting-rows-per-page" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-pink-500 text-slate-800 dark:text-slate-200">
+                        <option value="10">10 songs</option>
+                        <option value="25">25 songs</option>
+                        <option value="50">50 songs</option>
+                        <option value="100">100 songs</option>
+                        <option value="250">250 songs</option>
+                        <option value="1000">1,000 songs</option>
+                        <option value="999999">All songs</option>
+                    </select>
+                </div>
+
+                <!-- Auto-focus search toggle -->
+                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                    <div>
+                        <div class="font-semibold text-slate-800 dark:text-slate-200">Auto-focus Search Bar</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">Focus search field when opening app</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="setting-autofocus" class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-500"></div>
+                    </label>
+                </div>
+
+                <!-- Highlight matched terms toggle -->
+                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                    <div>
+                        <div class="font-semibold text-slate-800 dark:text-slate-200">Highlight Search Terms</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">Highlight matching text in song list</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="setting-highlight" class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-500"></div>
+                    </label>
+                </div>
+
+                <!-- Database Stats & Actions -->
+                <div class="pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Database Status:</span>
+                        <span id="settings-db-count" class="text-xs font-bold text-pink-500">0 songs loaded</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="resetToSongBundle()" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-700 dark:text-slate-300">Restore Bundle</button>
+                        <button onclick="clearDatabaseCache()" class="px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 text-xs font-medium hover:bg-rose-100 transition-all">Clear Cache</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button onclick="saveSettings()" class="w-full py-2.5 rounded-xl bg-pink-500 hover:bg-pink-600 text-white font-medium text-sm shadow-lg shadow-pink-500/20 transition-all">Save Preferences</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSV Upload Modal -->
+    <div id="upload-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative transform transition-all">
+            <button onclick="closeUploadModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center transition-all">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center space-x-3 mb-5">
+                <div class="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center">
+                    <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-lg text-slate-900 dark:text-white">Upload Custom Songbook CSV</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Supports comma or semicolon delimited files (NUMBER, TITLE, ARTIST)</p>
+                </div>
+            </div>
+
+            <!-- Drag and Drop Zone -->
+            <div id="drop-zone" class="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center hover:border-pink-500 dark:hover:border-pink-500 transition-all cursor-pointer bg-slate-50/50 dark:bg-slate-950/50 mb-6 group">
+                <input type="file" id="csv-file-input" accept=".csv" class="hidden" onchange="handleFileSelected(event)">
+                <div class="w-14 h-14 rounded-full bg-pink-50 dark:bg-pink-950/40 text-pink-500 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-file-csv text-2xl"></i>
+                </div>
+                <p class="font-semibold text-sm text-slate-700 dark:text-slate-200 mb-1">Click to browse or drag & drop CSV file</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500">Will import and cache records instantly into IndexedDB</p>
+            </div>
+
+            <div class="flex items-center justify-end space-x-3">
+                <button onclick="closeUploadModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium transition-all">Cancel</button>
+                <button onclick="document.getElementById('csv-file-input').click()" class="px-5 py-2.5 rounded-xl bg-pink-500 hover:bg-pink-600 text-white text-sm font-medium shadow-lg shadow-pink-500/20 transition-all">Browse File</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Song Detail / Performance Stage Modal -->
+    <div id="detail-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6 hidden">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative flex flex-col items-center text-center">
+            <button onclick="closeDetailModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center transition-all">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <span class="px-3 py-1 rounded-full bg-pink-500/10 text-pink-500 border border-pink-500/20 font-semibold text-xs tracking-wider uppercase mb-6">SongHub Stage View</span>
+
+            <div class="text-xs uppercase tracking-widest text-slate-400 dark:text-slate-500 font-bold mb-2">Song Number</div>
+            <div id="modal-song-no" class="text-6xl sm:text-8xl font-black text-pink-500 tracking-tight mb-6 font-mono drop-shadow-sm">0000</div>
+
+            <div class="text-xs uppercase tracking-widest text-slate-400 dark:text-slate-500 font-bold mb-1">Title</div>
+            <div id="modal-song-title" class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-6 px-4">Song Title Here</div>
+
+            <div class="text-xs uppercase tracking-widest text-slate-400 dark:text-slate-500 font-bold mb-1">Artist</div>
+            <div id="modal-song-artist" class="text-base sm:text-lg font-medium text-slate-600 dark:text-slate-300 mb-8">Artist Name</div>
+
+            <div class="flex items-center space-x-3 w-full justify-center">
+                <button id="modal-favorite-btn" onclick="toggleFavoriteFromModal()" class="flex items-center justify-center space-x-2 px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-sm transition-all">
+                    <i class="fa-solid fa-heart text-slate-400"></i>
+                    <span id="modal-favorite-text">Add to Favorites</span>
+                </button>
+                <button onclick="closeDetailModal()" class="px-6 py-3 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium text-sm hover:opacity-90 transition-all">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 dark:text-emerald-600 text-lg"></i>
+        <span id="toast-message" class="text-sm font-medium">Notification message</span>
+    </div>
+
+    <!-- Application Script Logic -->
+    <script>
+       
+        // --- IndexedDB Configuration ---
+        const DB_NAME = "SongHubSongListDB";
+        const DB_VERSION = 1;
+        const STORE_NAME = "songs";
+
+        let db = null;
+        let favorites = new Set(JSON.parse(localStorage.getItem('songhub_favorites') || '[]'));
+        
+        // Settings State
+        let userSettings = JSON.parse(localStorage.getItem('songhub_settings') || JSON.stringify({
+            rowsPerPage: 50,
+            autoFocus: true,
+            highlightSearch: true,
+            fontSize: 'md' // 'sm', 'md', 'lg', 'xl'
+        }));
+
+        // Search, Pagination & Sort State
+        let currentSearchQuery = "";
+        let isFavoritesOnly = false;
+        let currentPage = 1;
+        let totalMatchingRecords = 0;
+        let searchTimeout = null;
+        let currentModalSong = null;
+        let currentSortField = 'no';
+        let currentSortAsc = true;
+
+        // --- Initialize Database & App ---
+        window.addEventListener('DOMContentLoaded', async () => {
+            initTheme();
+            applySettingsToUI();
+            applyFontSizeToBody(userSettings.fontSize);
+            
+            try {
+                await initIndexedDB();
+                const count = await getSongCount();
+                if (count === 0) {
+                    showLoadingStatus("Loading SongBundle...", "Parsing embedded SongHub song bundle into local storage.");
+                    const parsedSongs = parseCSV(DEFAULT_CSV_DATA);
+                    await insertSongsBatch(parsedSongs);
+                }
+                hideLoadingState();
+                updateFavoritesBadge();
+                performSearch();
+
+                if (userSettings.autoFocus) {
+                    setTimeout(() => {
+                        document.getElementById('search-input').focus();
+                    }, 100);
+                }
+            } catch (err) {
+                console.error("Initialization error:", err);
+                showToast("Error initializing local database", "error");
+                hideLoadingState();
+            }
+
+            // Drag and drop setup for CSV Upload
+            const dropZone = document.getElementById('drop-zone');
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.add('border-pink-500', 'bg-pink-50/10'); }, false);
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.remove('border-pink-500', 'bg-pink-50/10'); }, false);
+            });
+            dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) processFile(files[0]);
+            });
+        });
+
+        // --- IndexedDB Helpers ---
+        function initIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                request.onupgradeneeded = (event) => {
+                    const database = event.target.result;
+                    if (!database.objectStoreNames.contains(STORE_NAME)) {
+                        const store = database.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('no', 'no', { unique: false });
+                        store.createIndex('title_lower', 'title_lower', { unique: false });
+                        store.createIndex('artist_lower', 'artist_lower', { unique: false });
+                    }
+                };
+            });
+        }
+
+        function getSongCount() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(STORE_NAME, 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const countRequest = store.count();
+                countRequest.onsuccess = () => resolve(countRequest.result);
+                countRequest.onerror = () => reject(countRequest.error);
+            });
+        }
+
+        function clearDatabase() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const clearReq = store.clear();
+                clearReq.onsuccess = () => resolve();
+                clearReq.onerror = () => reject(clearReq.error);
+            });
+        }
+
+        function insertSongsBatch(songs) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                
+                transaction.oncomplete = () => resolve();
+                transaction.onerror = () => reject(transaction.error);
+
+                for (let song of songs) {
+                    const cleanNo = String(song.no || song.NO || song.number || song.NUMBER || '').trim();
+                    const cleanTitle = String(song.title || song.TITLE || '').trim();
+                    const cleanArtist = String(song.artist || song.ARTIST || '').trim();
+                    
+                    if (!cleanNo && !cleanTitle) continue;
+
+                    store.add({
+                        no: cleanNo,
+                        title: cleanTitle,
+                        artist: cleanArtist,
+                        title_lower: cleanTitle.toLowerCase(),
+                        artist_lower: cleanArtist.toLowerCase()
+                    });
+                }
+            });
+        }
+
+        // --- Search, Sort & Query Engine ---
+        async function querySongs({ query = "", favoritesOnly = false, page = 1, pageSize = 50, sortField = 'no', sortAsc = true }) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(STORE_NAME, 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.openCursor();
+
+                const results = [];
+                const q = query.toLowerCase().trim();
+
+                request.onsuccess = (event) => {
+                    const cursor = event.target.result;
+                    if (cursor) {
+                        const song = cursor.value;
+                        
+                        // Favorites filter
+                        if (favoritesOnly && !favorites.has(song.no)) {
+                            cursor.continue();
+                            return;
+                        }
+
+                        // Search query filtering across NO, Title, Artist
+                        if (q === "" || 
+                            song.no.toLowerCase().includes(q) || 
+                            song.title_lower.includes(q) || 
+                            song.artist_lower.includes(q)) {
+                            results.push(song);
+                        }
+                        cursor.continue();
+                    } else {
+                        // Sort results
+                        results.sort((a, b) => {
+                            let valA = a[sortField] || '';
+                            let valB = b[sortField] || '';
+                            
+                            if (sortField === 'no') {
+                                const numA = parseFloat(valA);
+                                const numB = parseFloat(valB);
+                                if (!isNaN(numA) && !isNaN(numB)) {
+                                    return sortAsc ? numA - numB : numB - numA;
+                                }
+                            }
+                            
+                            valA = String(valA).toLowerCase();
+                            valB = String(valB).toLowerCase();
+                            if (valA < valB) return sortAsc ? -1 : 1;
+                            if (valA > valB) return sortAsc ? 1 : -1;
+                            return 0;
+                        });
+
+                        totalMatchingRecords = results.length;
+                        const limit = parseInt(pageSize) || 50;
+                        const startIndex = (page - 1) * limit;
+                        const paginatedItems = results.slice(startIndex, startIndex + limit);
+                        resolve({ items: paginatedItems, total: totalMatchingRecords });
+                    }
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // --- Search Handler & Debounce ---
+        function handleSearchInput(e) {
+            currentSearchQuery = e.target.value;
+            currentPage = 1;
+            
+            const clearBtn = document.getElementById('clear-search');
+            if (currentSearchQuery.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                performSearch();
+            }, 150);
+        }
+
+        function clearSearchBox() {
+            document.getElementById('search-input').value = "";
+            document.getElementById('clear-search').classList.add('hidden');
+            currentSearchQuery = "";
+            currentPage = 1;
+            performSearch();
+        }
+
+        async function performSearch() {
+            try {
+                const { items, total } = await querySongs({
+                    query: currentSearchQuery,
+                    favoritesOnly: isFavoritesOnly,
+                    page: currentPage,
+                    pageSize: userSettings.rowsPerPage,
+                    sortField: currentSortField,
+                    sortAsc: currentSortAsc
+                });
+
+                renderSongList(items, total);
+            } catch (err) {
+                console.error("Search query failed:", err);
+            }
+        }
+
+        function changePage(direction) {
+            const limit = parseInt(userSettings.rowsPerPage) || 50;
+            const maxPages = Math.ceil(totalMatchingRecords / limit) || 1;
+            currentPage += direction;
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > maxPages) currentPage = maxPages;
+            performSearch();
+            document.getElementById('songs-scroll-container').scrollTop = 0;
+        }
+
+        function changeSort(field) {
+            if (currentSortField === field) {
+                currentSortAsc = !currentSortAsc;
+            } else {
+                currentSortField = field;
+                currentSortAsc = true;
+            }
+            updateSortIcons();
+            currentPage = 1;
+            performSearch();
+        }
+
+        function updateSortIcons() {
+            ['no', 'title', 'artist'].forEach(f => {
+                const icon = document.getElementById(`sort-icon-${f}`);
+                if (f === currentSortField) {
+                    icon.className = currentSortAsc ? "fa-solid fa-sort-up text-[11px] text-pink-500" : "fa-solid fa-sort-down text-[11px] text-pink-500";
+                } else {
+                    icon.className = "fa-solid fa-sort text-[10px] text-slate-400";
+                }
+            });
+        }
+
+        // --- Dynamic Font Size Settings ---
+        function setFontSize(sizeKey) {
+            userSettings.fontSize = sizeKey;
+            applyFontSizeToBody(sizeKey);
+            updateFontSizeUIButtons(sizeKey);
+        }
+
+        function applyFontSizeToBody(sizeKey) {
+            const appBody = document.getElementById('app-body');
+            appBody.classList.remove('font-size-sm', 'font-size-md', 'font-size-lg', 'font-size-xl');
+            appBody.classList.add(`font-size-${sizeKey}`);
+        }
+
+        function updateFontSizeUIButtons(sizeKey) {
+            ['sm', 'md', 'lg', 'xl'].forEach(s => {
+                const btn = document.getElementById(`font-btn-${s}`);
+                if (s === sizeKey) {
+                    btn.className = "py-2 px-1 text-xs font-bold rounded-lg bg-pink-500 text-white shadow-md text-center transition-all";
+                } else {
+                    btn.className = "py-2 px-1 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-center transition-all";
+                }
+            });
+
+            const labels = {
+                'sm': 'Compact',
+                'md': 'Medium',
+                'lg': 'Large',
+                'xl': 'Extra Large'
+            };
+            document.getElementById('font-size-label').textContent = labels[sizeKey] || 'Medium';
+        }
+
+        // --- Rendering Song List ---
+        function renderSongList(songs, total) {
+            const container = document.getElementById('songs-list-body');
+            const emptyState = document.getElementById('empty-state');
+            const resultsCount = document.getElementById('results-count');
+            const paginationInfo = document.getElementById('pagination-info');
+            const pageIndicator = document.getElementById('page-indicator');
+            const prevBtn = document.getElementById('prev-page-btn');
+            const nextBtn = document.getElementById('next-page-btn');
+
+            resultsCount.textContent = `${total.toLocaleString()} songs found`;
+
+            if (songs.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                paginationInfo.textContent = `Showing 0 of 0`;
+                pageIndicator.textContent = `Page 1 of 1`;
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            const limit = parseInt(userSettings.rowsPerPage) || 50;
+            const maxPages = Math.ceil(total / limit) || 1;
+            const startRange = ((currentPage - 1) * limit) + 1;
+            const endRange = Math.min(currentPage * limit, total);
+            
+            paginationInfo.textContent = `Showing ${startRange.toLocaleString()} - ${endRange.toLocaleString()} of ${total.toLocaleString()}`;
+            pageIndicator.textContent = `Page ${currentPage} of ${maxPages}`;
+            prevBtn.disabled = currentPage <= 1;
+            nextBtn.disabled = currentPage >= maxPages;
+
+            let html = '';
+            for (let song of songs) {
+                const isFav = favorites.has(song.no);
+                let displayNo = escapeHtml(song.no);
+                let displayTitle = escapeHtml(song.title);
+                let displayArtist = escapeHtml(song.artist);
+
+                if (userSettings.highlightSearch && currentSearchQuery.trim().length > 0) {
+                    displayNo = highlightText(displayNo, currentSearchQuery);
+                    displayTitle = highlightText(displayTitle, currentSearchQuery);
+                    displayArtist = highlightText(displayArtist, currentSearchQuery);
+                }
+
+                html += `
+                    <div class="song-row grid grid-cols-12 px-4 items-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group" onclick="openDetailModal('${escapeHtml(song.no)}', '${escapeHtml(song.title)}', '${escapeHtml(song.artist)}')">
+                        <div class="song-no col-span-3 sm:col-span-2 font-mono font-bold text-pink-600 dark:text-pink-400">${displayNo}</div>
+                        <div class="col-span-5 sm:col-span-5 font-semibold text-slate-900 dark:text-white pr-2 truncate">${displayTitle}</div>
+                        <div class="col-span-3 sm:col-span-4 text-slate-600 dark:text-slate-400 pr-2 truncate">${displayArtist}</div>
+                        <div class="col-span-1 flex items-center justify-end space-x-2">
+                            <button onclick="event.stopPropagation(); toggleFavorite('${escapeHtml(song.no)}')" class="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 transition-all ${isFav ? 'text-pink-500' : ''}" title="${isFav ? 'Remove Favorite' : 'Add Favorite'}">
+                                <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart text-base"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function highlightText(text, query) {
+            if (!query) return text;
+            try {
+                const escapedQuery = query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                const regex = new RegExp(`(${escapedQuery})`, 'gi');
+                return text.replace(regex, '<mark>$1</mark>');
+            } catch (e) {
+                return text;
+            }
+        }
+
+        // --- CSV / SongBundle File Processing Parser ---
+        function openUploadModal() { document.getElementById('upload-modal').classList.remove('hidden'); }
+        function closeUploadModal() { document.getElementById('upload-modal').classList.add('hidden'); }
+
+        async function handleFileSelected(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            await processFile(file);
+            event.target.value = '';
+        }
+
+        async function processFile(file) {
+            closeUploadModal();
+            showLoadingStatus("Parsing CSV File...", "Reading and indexing records into IndexedDB.");
+
+            try {
+                const text = await readFileAsText(file);
+                const songs = parseCSV(text);
+                
+                if (songs.length === 0) {
+                    showToast("No valid songs detected in CSV file", "error");
+                    hideLoadingState();
+                    return;
+                }
+
+                showLoadingStatus("Indexing Database...", `Saving ${songs.length.toLocaleString()} songs locally for instant queries.`);
+                await clearDatabase();
+                await insertSongsBatch(songs);
+                
+                hideLoadingState();
+                showToast(`Successfully loaded ${songs.length.toLocaleString()} songs!`, "success");
+                currentPage = 1;
+                performSearch();
+            } catch (err) {
+                console.error("CSV Parse error:", err);
+                showToast("Failed to parse CSV file format", "error");
+                hideLoadingState();
+            }
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(e);
+                reader.readAsText(file);
+            });
+        }
+
+        function parseCSV(text) {
+            const lines = text.split(/\r\n|\n/);
+            if (lines.length === 0) return [];
+
+            const firstLine = lines[0];
+            const delimiter = firstLine.includes(';') ? ';' : (firstLine.includes('\t') ? '\t' : ',');
+
+            let startIndex = 0;
+            let headers = [];
+            
+            const lowerFirst = firstLine.toLowerCase();
+            if (lowerFirst.includes('no') || lowerFirst.includes('title') || lowerFirst.includes('song') || lowerFirst.includes('number')) {
+                headers = parseCSVLine(firstLine, delimiter).map(h => h.toLowerCase().trim());
+                startIndex = 1;
+            }
+
+            let noIdx = headers.findIndex(h => h.includes('no') || h.includes('number') || h.includes('code'));
+            let titleIdx = headers.findIndex(h => h.includes('title') || h.includes('song'));
+            let artistIdx = headers.findIndex(h => h.includes('artist') || h.includes('singer') || h.includes('performer'));
+
+            if (noIdx === -1) noIdx = 0;
+            if (titleIdx === -1) titleIdx = 1;
+            if (artistIdx === -1) artistIdx = 2;
+
+            const songs = [];
+            for (let i = startIndex; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const cols = parseCSVLine(line, delimiter);
+                if (cols.length >= 2) {
+                    const no = (cols[noIdx] || '').trim();
+                    const title = (cols[titleIdx] || '').trim();
+                    const artist = (cols[artistIdx] || '').trim();
+
+                    if (no || title) {
+                        songs.push({ no, title, artist });
+                    }
+                }
+            }
+            return songs;
+        }
+
+        function parseCSVLine(text, delimiter = ',') {
+            const result = [];
+            let inQuotes = false;
+            let current = '';
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                if (char === '"') {
+                    if (inQuotes && text[i + 1] === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === delimiter && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        // --- Settings Modal & Preferences ---
+        async function openSettingsModal() {
+            try {
+                const count = await getSongCount();
+                document.getElementById('settings-db-count').textContent = `${count.toLocaleString()} songs loaded`;
+            } catch(e) {
+                document.getElementById('settings-db-count').textContent = "Database active";
+            }
+            updateFontSizeUIButtons(userSettings.fontSize || 'md');
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        function applySettingsToUI() {
+            document.getElementById('setting-rows-per-page').value = userSettings.rowsPerPage;
+            document.getElementById('setting-autofocus').checked = userSettings.autoFocus;
+            document.getElementById('setting-highlight').checked = userSettings.highlightSearch;
+            updateFontSizeUIButtons(userSettings.fontSize || 'md');
+        }
+
+        async function saveSettings() {
+            userSettings.rowsPerPage = parseInt(document.getElementById('setting-rows-per-page').value) || 50;
+            userSettings.autoFocus = document.getElementById('setting-autofocus').checked;
+            userSettings.highlightSearch = document.getElementById('setting-highlight').checked;
+            
+            localStorage.setItem('songhub_settings', JSON.stringify(userSettings));
+            closeSettingsModal();
+            showToast("Preferences saved successfully", "success");
+            currentPage = 1;
+            performSearch();
+        }
+
+        async function resetToSongBundle() {
+            if (!confirm("Restore database back to default embedded song bundle?")) return;
+            closeSettingsModal();
+            showLoadingStatus("Restoring SongBundle...", "Reloading embedded SongHub song bundle.");
+            try {
+                await clearDatabase();
+                const parsedSongs = parseCSV(DEFAULT_CSV_DATA);
+                await insertSongsBatch(parsedSongs);
+                hideLoadingState();
+                showToast("Restored default SongBundle catalog", "success");
+                currentPage = 1;
+                performSearch();
+            } catch (err) {
+                console.error("Reset error:", err);
+                hideLoadingState();
+            }
+        }
+
+        async function clearDatabaseCache() {
+            if (!confirm("Are you sure you want to clear all stored songs from the local database cache?")) return;
+            closeSettingsModal();
+            showLoadingStatus("Clearing Cache...", "Wiping local song index.");
+            try {
+                await clearDatabase();
+                hideLoadingState();
+                showToast("Database cache cleared", "info");
+                currentPage = 1;
+                performSearch();
+            } catch (err) {
+                console.error("Clear error:", err);
+                hideLoadingState();
+            }
+        }
+
+        // --- Favorites Management ---
+        function toggleFavorite(no) {
+            if (favorites.has(no)) {
+                favorites.delete(no);
+                showToast("Removed from favorites", "info");
+            } else {
+                favorites.add(no);
+                showToast("Added to favorites!", "success");
+            }
+            localStorage.setItem('songhub_favorites', JSON.stringify(Array.from(favorites)));
+            updateFavoritesBadge();
+            performSearch();
+            if (currentModalSong && currentModalSong.no === no) {
+                updateModalFavoriteButton();
+            }
+        }
+
+        function toggleFavoritesFilter() {
+            isFavoritesOnly = !isFavoritesOnly;
+            const btn = document.getElementById('favorites-filter-btn');
+            if (isFavoritesOnly) {
+                btn.classList.add('bg-pink-500/10', 'border-pink-500');
+                showToast("Showing favorites only", "info");
+            } else {
+                btn.classList.remove('bg-pink-500/10', 'border-pink-500');
+                showToast("Showing all songs", "info");
+            }
+            currentPage = 1;
+            performSearch();
+        }
+
+        function updateFavoritesBadge() {
+            const badge = document.getElementById('favorites-badge');
+            badge.textContent = favorites.size;
+            if (favorites.size > 0) {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // --- Song Detail / Stage Modal ---
+        function openDetailModal(no, title, artist) {
+            currentModalSong = { no, title, artist };
+            document.getElementById('modal-song-no').textContent = no;
+            document.getElementById('modal-song-title').textContent = title;
+            document.getElementById('modal-song-artist').textContent = artist;
+            updateModalFavoriteButton();
+            document.getElementById('detail-modal').classList.remove('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detail-modal').classList.add('hidden');
+            currentModalSong = null;
+        }
+
+        function toggleFavoriteFromModal() {
+            if (currentModalSong) {
+                toggleFavorite(currentModalSong.no);
+            }
+        }
+
+        function updateModalFavoriteButton() {
+            if (!currentModalSong) return;
+            const isFav = favorites.has(currentModalSong.no);
+            const btnText = document.getElementById('modal-favorite-text');
+            const icon = document.querySelector('#modal-favorite-btn i');
+            
+            if (isFav) {
+                btnText.textContent = "Favorited";
+                icon.className = "fa-solid fa-heart text-pink-500";
+            } else {
+                btnText.textContent = "Add to Favorites";
+                icon.className = "fa-regular fa-heart text-slate-400";
+            }
+        }
+
+        // --- UI Helpers ---
+        function showLoadingStatus(title, subtitle) {
+            document.getElementById('loading-title').textContent = title;
+            document.getElementById('loading-subtitle').textContent = subtitle;
+            document.getElementById('loading-state').classList.remove('hidden');
+        }
+
+        function hideLoadingState() {
+            document.getElementById('loading-state').classList.add('hidden');
+        }
+
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.textContent = message;
+            if (type === "success") {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            } else if (type === "error") {
+                toastIcon.className = "fa-solid fa-circle-exclamation text-rose-400";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-info text-sky-400";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function initTheme() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
