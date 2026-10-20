@@ -2,12 +2,14 @@
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#db2777">
+    <meta name="description" content="Fast, mobile-friendly SongHub song catalog with offline-friendly local caching.">
     <title>SongHub SongList</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- External Songs Database -->
-    <script src="songs_bundle.js"></script>
+    <!-- Bundled catalog: keep songs_bundle.js beside index.html when deploying to GitHub Pages. -->
+    <script src="./songs_bundle.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -31,7 +33,19 @@
     <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        button, input, select { touch-action: manipulation; }
+        .song-row { min-height: 54px; }
+        @media (max-width: 640px) {
+            #songs-scroll-container { overscroll-behavior: contain; }
+            .song-row { min-height: 58px; }
+            #pagination-footer { flex-wrap: wrap; gap: .65rem; }
+            #pagination-info { width: 100%; }
+            #page-indicator { white-space: nowrap; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+        }
         /* Custom scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -96,11 +110,6 @@
                     <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
                 </button>
 
-                <!-- Upload trigger button -->
-                <button onclick="openUploadModal()" class="flex items-center space-x-2 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-medium px-3.5 py-2 rounded-xl shadow-lg shadow-pink-500/25 transition-all text-sm">
-                    <i class="fa-solid fa-file-arrow-up"></i>
-                    <span class="hidden sm:inline">Load CSV</span>
-                </button>
             </div>
         </div>
     </header>
@@ -129,11 +138,9 @@
             <div class="flex flex-wrap items-center justify-between mt-3 text-xs text-slate-500 dark:text-slate-400 px-1 gap-2">
                 <div class="flex items-center space-x-4">
                     <span id="results-count">Loading songbook index...</span>
-                    <span class="hidden md:inline">&bull; Embedded bundle from SongHub App</span>
+                    <span class="hidden md:inline">&bull; 42,772 songs bundled with this app</span>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <button onclick="openUploadModal()" class="text-pink-500 hover:underline font-medium">Import Custom CSV</button>
-                    <span>&bull;</span>
                     <button onclick="openSettingsModal()" class="text-slate-600 dark:text-slate-300 hover:underline font-medium">Preferences</button>
                 </div>
             </div>
@@ -167,8 +174,7 @@
                         <i class="fa-solid fa-music"></i>
                     </div>
                     <h3 class="font-bold text-base text-slate-700 dark:text-slate-300 mb-1">No songs found</h3>
-                    <p class="text-sm text-slate-500 dark:text-slate-400 max-w-sm mb-4">Try checking your spelling, searching for a different keyword, or load your custom CSV songbook.</p>
-                    <button onclick="openUploadModal()" class="px-4 py-2 bg-pink-500 text-white rounded-xl text-sm font-medium hover:bg-pink-600 transition-all">Upload CSV Songbook</button>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 max-w-sm mb-4">Try checking your spelling or searching for a different keyword.</p>
                 </div>
 
                 <!-- Loading State Spinner -->
@@ -245,7 +251,7 @@
                         <option value="100">100 songs</option>
                         <option value="250">250 songs</option>
                         <option value="1000">1,000 songs</option>
-                        <option value="999999">All songs</option>
+                        
                     </select>
                 </div>
 
@@ -292,40 +298,6 @@
         </div>
     </div>
 
-    <!-- CSV Upload Modal -->
-    <div id="upload-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative transform transition-all">
-            <button onclick="closeUploadModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center transition-all">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-
-            <div class="flex items-center space-x-3 mb-5">
-                <div class="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center">
-                    <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
-                </div>
-                <div>
-                    <h2 class="font-bold text-lg text-slate-900 dark:text-white">Upload Custom Songbook CSV</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Supports comma or semicolon delimited files (NUMBER, TITLE, ARTIST)</p>
-                </div>
-            </div>
-
-            <!-- Drag and Drop Zone -->
-            <div id="drop-zone" class="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center hover:border-pink-500 dark:hover:border-pink-500 transition-all cursor-pointer bg-slate-50/50 dark:bg-slate-950/50 mb-6 group">
-                <input type="file" id="csv-file-input" accept=".csv" class="hidden" onchange="handleFileSelected(event)">
-                <div class="w-14 h-14 rounded-full bg-pink-50 dark:bg-pink-950/40 text-pink-500 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                    <i class="fa-solid fa-file-csv text-2xl"></i>
-                </div>
-                <p class="font-semibold text-sm text-slate-700 dark:text-slate-200 mb-1">Click to browse or drag & drop CSV file</p>
-                <p class="text-xs text-slate-400 dark:text-slate-500">Will import and cache records instantly into IndexedDB</p>
-            </div>
-
-            <div class="flex items-center justify-end space-x-3">
-                <button onclick="closeUploadModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium transition-all">Cancel</button>
-                <button onclick="document.getElementById('csv-file-input').click()" class="px-5 py-2.5 rounded-xl bg-pink-500 hover:bg-pink-600 text-white text-sm font-medium shadow-lg shadow-pink-500/20 transition-all">Browse File</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Song Detail / Performance Stage Modal -->
     <div id="detail-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6 hidden">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative flex flex-col items-center text-center">
@@ -365,19 +337,30 @@
        
         // --- IndexedDB Configuration ---
         const DB_NAME = "SongHubSongListDB";
-        const DB_VERSION = 1;
+        const DB_VERSION = 2;
         const STORE_NAME = "songs";
 
         let db = null;
-        let favorites = new Set(JSON.parse(localStorage.getItem('songhub_favorites') || '[]'));
+        let songCache = [];
+        let sortedSongCache = { no: [], title: [], artist: [] };
+        let searchRequestId = 0;
+        const safeStorageRead = (key, fallback) => {
+            try { const value = localStorage.getItem(key); return value === null ? fallback : JSON.parse(value); }
+            catch (error) { console.warn(`Ignoring invalid local setting: ${key}`, error); return fallback; }
+        };
+        let favorites = new Set((Array.isArray(safeStorageRead('songhub_favorites', [])) ? safeStorageRead('songhub_favorites', []) : []).map(String));
         
         // Settings State
-        let userSettings = JSON.parse(localStorage.getItem('songhub_settings') || JSON.stringify({
-            rowsPerPage: 50,
-            autoFocus: true,
-            highlightSearch: true,
-            fontSize: 'md' // 'sm', 'md', 'lg', 'xl'
-        }));
+        const DEFAULT_SETTINGS = { rowsPerPage: 50, autoFocus: true, highlightSearch: true, fontSize: 'md' };
+        const storedSettings = safeStorageRead('songhub_settings', {});
+        let userSettings = {
+            ...DEFAULT_SETTINGS,
+            ...(storedSettings && typeof storedSettings === 'object' && !Array.isArray(storedSettings) ? storedSettings : {})
+        };
+        if (![10, 25, 50, 100, 250, 1000].includes(Number(userSettings.rowsPerPage))) userSettings.rowsPerPage = 50;
+        if (!['sm', 'md', 'lg', 'xl'].includes(userSettings.fontSize)) userSettings.fontSize = 'md';
+        userSettings.autoFocus = Boolean(userSettings.autoFocus);
+        userSettings.highlightSearch = Boolean(userSettings.highlightSearch);
 
         // Search, Pagination & Sort State
         let currentSearchQuery = "";
@@ -399,10 +382,15 @@
                 await initIndexedDB();
                 const count = await getSongCount();
                 if (count === 0) {
-                    showLoadingStatus("Loading SongBundle...", "Parsing embedded SongHub song bundle into local storage.");
-                    const parsedSongs = parseCSV(DEFAULT_CSV_DATA);
-                    await insertSongsBatch(parsedSongs);
+                    if (typeof DEFAULT_CSV_DATA === 'string' && DEFAULT_CSV_DATA.trim()) {
+                        showLoadingStatus("Loading SongHub catalog...", "Preparing the bundled song catalog for first use.");
+                        const parsedSongs = parseCSV(DEFAULT_CSV_DATA);
+                        await replaceSongsAtomic(parsedSongs);
+                    } else {
+                        throw new Error("songs_bundle.js did not define DEFAULT_CSV_DATA. Check that the file exists and loads before index.html.");
+                    }
                 }
+                await refreshSongCache();
                 hideLoadingState();
                 updateFavoritesBadge();
                 performSearch();
@@ -418,19 +406,6 @@
                 hideLoadingState();
             }
 
-            // Drag and drop setup for CSV Upload
-            const dropZone = document.getElementById('drop-zone');
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.add('border-pink-500', 'bg-pink-50/10'); }, false);
-            });
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.remove('border-pink-500', 'bg-pink-50/10'); }, false);
-            });
-            dropZone.addEventListener('drop', (e) => {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                if (files.length > 0) processFile(files[0]);
-            });
         });
 
         // --- IndexedDB Helpers ---
@@ -444,12 +419,12 @@
                 };
                 request.onupgradeneeded = (event) => {
                     const database = event.target.result;
-                    if (!database.objectStoreNames.contains(STORE_NAME)) {
-                        const store = database.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-                        store.createIndex('no', 'no', { unique: false });
-                        store.createIndex('title_lower', 'title_lower', { unique: false });
-                        store.createIndex('artist_lower', 'artist_lower', { unique: false });
-                    }
+                    const store = database.objectStoreNames.contains(STORE_NAME)
+                        ? event.target.transaction.objectStore(STORE_NAME)
+                        : database.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                    if (!store.indexNames.contains('no')) store.createIndex('no', 'no', { unique: false });
+                    if (!store.indexNames.contains('title_lower')) store.createIndex('title_lower', 'title_lower', { unique: false });
+                    if (!store.indexNames.contains('artist_lower')) store.createIndex('artist_lower', 'artist_lower', { unique: false });
                 };
             });
         }
@@ -467,98 +442,86 @@
         function clearDatabase() {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([STORE_NAME], 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-                const clearReq = store.clear();
-                clearReq.onsuccess = () => resolve();
-                clearReq.onerror = () => reject(clearReq.error);
+                transaction.objectStore(STORE_NAME).clear();
+                transaction.oncomplete = () => resolve();
+                transaction.onerror = () => reject(transaction.error || new Error('Database clear failed'));
+                transaction.onabort = () => reject(transaction.error || new Error('Database clear was aborted'));
             });
         }
 
-        function insertSongsBatch(songs) {
+        // Replace the catalog in one transaction: a failed import rolls back instead of leaving an empty/partial catalog.
+        function replaceSongsAtomic(songs) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([STORE_NAME], 'readwrite');
                 const store = transaction.objectStore(STORE_NAME);
-                
-                transaction.oncomplete = () => resolve();
-                transaction.onerror = () => reject(transaction.error);
-
-                for (let song of songs) {
-                    const cleanNo = String(song.no || song.NO || song.number || song.NUMBER || '').trim();
-                    const cleanTitle = String(song.title || song.TITLE || '').trim();
-                    const cleanArtist = String(song.artist || song.ARTIST || '').trim();
-                    
-                    if (!cleanNo && !cleanTitle) continue;
-
-                    store.add({
-                        no: cleanNo,
-                        title: cleanTitle,
-                        artist: cleanArtist,
-                        title_lower: cleanTitle.toLowerCase(),
-                        artist_lower: cleanArtist.toLowerCase()
-                    });
+                store.clear();
+                let inserted = 0;
+                for (const song of songs) {
+                    const no = String(song.no ?? song.NO ?? song.number ?? song.NUMBER ?? '').trim();
+                    const title = String(song.title ?? song.TITLE ?? '').trim();
+                    const artist = String(song.artist ?? song.ARTIST ?? '').trim();
+                    if (!no && !title) continue;
+                    store.add({ no, title, artist, no_lower: no.toLocaleLowerCase(), title_lower: title.toLocaleLowerCase(), artist_lower: artist.toLocaleLowerCase() });
+                    inserted++;
                 }
+                transaction.oncomplete = () => resolve(inserted);
+                transaction.onerror = () => reject(transaction.error || new Error('Catalog import failed'));
+                transaction.onabort = () => reject(transaction.error || new Error('Catalog import was rolled back'));
             });
         }
 
-        // --- Search, Sort & Query Engine ---
-        async function querySongs({ query = "", favoritesOnly = false, page = 1, pageSize = 50, sortField = 'no', sortAsc = true }) {
+        function refreshSongCache() {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction(STORE_NAME, 'readonly');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.openCursor();
-
-                const results = [];
-                const q = query.toLowerCase().trim();
-
-                request.onsuccess = (event) => {
-                    const cursor = event.target.result;
-                    if (cursor) {
-                        const song = cursor.value;
-                        
-                        // Favorites filter
-                        if (favoritesOnly && !favorites.has(song.no)) {
-                            cursor.continue();
-                            return;
-                        }
-
-                        // Search query filtering across NO, Title, Artist
-                        if (q === "" || 
-                            song.no.toLowerCase().includes(q) || 
-                            song.title_lower.includes(q) || 
-                            song.artist_lower.includes(q)) {
-                            results.push(song);
-                        }
-                        cursor.continue();
-                    } else {
-                        // Sort results
-                        results.sort((a, b) => {
-                            let valA = a[sortField] || '';
-                            let valB = b[sortField] || '';
-                            
-                            if (sortField === 'no') {
-                                const numA = parseFloat(valA);
-                                const numB = parseFloat(valB);
-                                if (!isNaN(numA) && !isNaN(numB)) {
-                                    return sortAsc ? numA - numB : numB - numA;
-                                }
-                            }
-                            
-                            valA = String(valA).toLowerCase();
-                            valB = String(valB).toLowerCase();
-                            if (valA < valB) return sortAsc ? -1 : 1;
-                            if (valA > valB) return sortAsc ? 1 : -1;
-                            return 0;
-                        });
-
-                        totalMatchingRecords = results.length;
-                        const limit = parseInt(pageSize) || 50;
-                        const startIndex = (page - 1) * limit;
-                        const paginatedItems = results.slice(startIndex, startIndex + limit);
-                        resolve({ items: paginatedItems, total: totalMatchingRecords });
+                const request = transaction.objectStore(STORE_NAME).getAll();
+                request.onsuccess = () => {
+                    songCache = request.result.map(song => ({
+                        ...song,
+                        no: String(song.no ?? ''),
+                        title: String(song.title ?? ''),
+                        artist: String(song.artist ?? ''),
+                        no_lower: String(song.no_lower ?? song.no ?? '').toLocaleLowerCase(),
+                        title_lower: String(song.title_lower ?? song.title ?? '').toLocaleLowerCase(),
+                        artist_lower: String(song.artist_lower ?? song.artist ?? '').toLocaleLowerCase()
+                    }));
+                    const collators = {
+                        no: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }),
+                        title: new Intl.Collator(undefined, { sensitivity: 'base' }),
+                        artist: new Intl.Collator(undefined, { sensitivity: 'base' })
+                    };
+                    sortedSongCache = {};
+                    for (const field of ['no', 'title', 'artist']) {
+                        sortedSongCache[field] = [...songCache].sort((a, b) => collators[field].compare(a[field], b[field]) || (a.id ?? 0) - (b.id ?? 0));
                     }
+                    resolve(songCache.length);
                 };
-                request.onerror = () => reject(request.error);
+                request.onerror = () => reject(request.error || new Error('Could not load catalog into memory'));
+                transaction.onabort = () => reject(transaction.error || new Error('Catalog read was aborted'));
             });
+        }
+
+        // 42k records fit comfortably in memory on most modern phones; caching avoids opening an IndexedDB cursor on every keystroke.
+        async function querySongs({ query = '', favoritesOnly = false, page = 1, pageSize = 50, sortField = 'no', sortAsc = true }) {
+            const q = String(query).toLocaleLowerCase().trim();
+            const field = ['no', 'title', 'artist'].includes(sortField) ? sortField : 'no';
+            const ordered = sortedSongCache[field] || songCache;
+            const limit = Math.min(1000, Math.max(1, Number(pageSize) || 50));
+            const requestedPage = Math.max(1, Number(page) || 1);
+            const start = (requestedPage - 1) * limit;
+            const items = [];
+            let total = 0;
+            // Lists are pre-sorted once after import; queries scan/filter and retain only the visible page.
+            for (let step = 0; step < ordered.length; step++) {
+                const song = ordered[sortAsc ? step : ordered.length - 1 - step];
+                if (favoritesOnly && !favorites.has(song.no)) continue;
+                if (q && !song.no_lower.includes(q) && !song.title_lower.includes(q) && !song.artist_lower.includes(q)) continue;
+                if (total >= start && items.length < limit) items.push(song);
+                total++;
+            }
+            const maxPages = Math.max(1, Math.ceil(total / limit));
+            const safePage = Math.min(requestedPage, maxPages);
+            if (safePage !== requestedPage) return querySongs({ query, favoritesOnly, page: safePage, pageSize: limit, sortField: field, sortAsc });
+            return { items, total, page: safePage };
         }
 
         // --- Search Handler & Debounce ---
@@ -588,19 +551,20 @@
         }
 
         async function performSearch() {
+            const requestId = ++searchRequestId;
             try {
-                const { items, total } = await querySongs({
-                    query: currentSearchQuery,
-                    favoritesOnly: isFavoritesOnly,
-                    page: currentPage,
-                    pageSize: userSettings.rowsPerPage,
-                    sortField: currentSortField,
-                    sortAsc: currentSortAsc
+                const result = await querySongs({
+                    query: currentSearchQuery, favoritesOnly: isFavoritesOnly,
+                    page: currentPage, pageSize: userSettings.rowsPerPage,
+                    sortField: currentSortField, sortAsc: currentSortAsc
                 });
-
-                renderSongList(items, total);
+                if (requestId !== searchRequestId) return; // Ignore stale asynchronous results.
+                currentPage = result.page;
+                totalMatchingRecords = result.total;
+                renderSongList(result.items, result.total);
             } catch (err) {
-                console.error("Search query failed:", err);
+                console.error('Search query failed:', err);
+                showToast('Search failed. Try reloading the catalog.', 'error');
             }
         }
 
@@ -673,191 +637,128 @@
         function renderSongList(songs, total) {
             const container = document.getElementById('songs-list-body');
             const emptyState = document.getElementById('empty-state');
-            const resultsCount = document.getElementById('results-count');
-            const paginationInfo = document.getElementById('pagination-info');
-            const pageIndicator = document.getElementById('page-indicator');
-            const prevBtn = document.getElementById('prev-page-btn');
-            const nextBtn = document.getElementById('next-page-btn');
+            const limit = Math.min(1000, Math.max(1, Number(userSettings.rowsPerPage) || 50));
+            const maxPages = Math.max(1, Math.ceil(total / limit));
+            currentPage = Math.min(Math.max(1, currentPage), maxPages);
+            document.getElementById('results-count').textContent = `${total.toLocaleString()} songs found`;
+            document.getElementById('pagination-info').textContent = total ? `Showing ${((currentPage - 1) * limit + 1).toLocaleString()}–${Math.min(currentPage * limit, total).toLocaleString()} of ${total.toLocaleString()}` : 'Showing 0 of 0';
+            document.getElementById('page-indicator').textContent = `Page ${currentPage} of ${maxPages}`;
+            document.getElementById('prev-page-btn').disabled = currentPage <= 1 || total === 0;
+            document.getElementById('next-page-btn').disabled = currentPage >= maxPages;
+            container.replaceChildren();
+            emptyState.classList.toggle('hidden', songs.length > 0);
+            if (!songs.length) return;
 
-            resultsCount.textContent = `${total.toLocaleString()} songs found`;
-
-            if (songs.length === 0) {
-                container.innerHTML = '';
-                emptyState.classList.remove('hidden');
-                paginationInfo.textContent = `Showing 0 of 0`;
-                pageIndicator.textContent = `Page 1 of 1`;
-                prevBtn.disabled = true;
-                nextBtn.disabled = true;
-                return;
-            }
-
-            emptyState.classList.add('hidden');
-
-            const limit = parseInt(userSettings.rowsPerPage) || 50;
-            const maxPages = Math.ceil(total / limit) || 1;
-            const startRange = ((currentPage - 1) * limit) + 1;
-            const endRange = Math.min(currentPage * limit, total);
-            
-            paginationInfo.textContent = `Showing ${startRange.toLocaleString()} - ${endRange.toLocaleString()} of ${total.toLocaleString()}`;
-            pageIndicator.textContent = `Page ${currentPage} of ${maxPages}`;
-            prevBtn.disabled = currentPage <= 1;
-            nextBtn.disabled = currentPage >= maxPages;
-
-            let html = '';
-            for (let song of songs) {
+            const fragment = document.createDocumentFragment();
+            for (const song of songs) {
                 const isFav = favorites.has(song.no);
-                let displayNo = escapeHtml(song.no);
-                let displayTitle = escapeHtml(song.title);
-                let displayArtist = escapeHtml(song.artist);
+                const row = document.createElement('div');
+                row.className = 'song-row grid grid-cols-12 px-4 items-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group';
+                row.tabIndex = 0;
+                row.setAttribute('role', 'button');
+                row.setAttribute('aria-label', `Song ${song.no}: ${song.title} by ${song.artist}`);
+                row.addEventListener('click', () => openDetailModal(song.no, song.title, song.artist));
+                row.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openDetailModal(song.no, song.title, song.artist); } });
 
-                if (userSettings.highlightSearch && currentSearchQuery.trim().length > 0) {
-                    displayNo = highlightText(displayNo, currentSearchQuery);
-                    displayTitle = highlightText(displayTitle, currentSearchQuery);
-                    displayArtist = highlightText(displayArtist, currentSearchQuery);
-                }
-
-                html += `
-                    <div class="song-row grid grid-cols-12 px-4 items-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group" onclick="openDetailModal('${escapeHtml(song.no)}', '${escapeHtml(song.title)}', '${escapeHtml(song.artist)}')">
-                        <div class="song-no col-span-3 sm:col-span-2 font-mono font-bold text-pink-600 dark:text-pink-400">${displayNo}</div>
-                        <div class="col-span-5 sm:col-span-5 font-semibold text-slate-900 dark:text-white pr-2 truncate">${displayTitle}</div>
-                        <div class="col-span-3 sm:col-span-4 text-slate-600 dark:text-slate-400 pr-2 truncate">${displayArtist}</div>
-                        <div class="col-span-1 flex items-center justify-end space-x-2">
-                            <button onclick="event.stopPropagation(); toggleFavorite('${escapeHtml(song.no)}')" class="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 transition-all ${isFav ? 'text-pink-500' : ''}" title="${isFav ? 'Remove Favorite' : 'Add Favorite'}">
-                                <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart text-base"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
+                const noCell = document.createElement('div');
+                noCell.className = 'song-no col-span-3 sm:col-span-2 font-mono font-bold text-pink-600 dark:text-pink-400';
+                appendHighlightedText(noCell, song.no, currentSearchQuery);
+                const titleCell = document.createElement('div');
+                titleCell.className = 'col-span-5 sm:col-span-5 font-semibold text-slate-900 dark:text-white pr-2 truncate';
+                titleCell.title = song.title;
+                appendHighlightedText(titleCell, song.title, currentSearchQuery);
+                const artistCell = document.createElement('div');
+                artistCell.className = 'col-span-3 sm:col-span-4 text-slate-600 dark:text-slate-400 pr-2 truncate';
+                artistCell.title = song.artist;
+                appendHighlightedText(artistCell, song.artist, currentSearchQuery);
+                const actionCell = document.createElement('div');
+                actionCell.className = 'col-span-1 flex items-center justify-end';
+                const favoriteButton = document.createElement('button');
+                favoriteButton.type = 'button';
+                favoriteButton.className = `p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all ${isFav ? 'text-pink-500' : 'text-slate-400'}`;
+                favoriteButton.title = isFav ? 'Remove Favorite' : 'Add Favorite';
+                favoriteButton.setAttribute('aria-label', favoriteButton.title);
+                const heart = document.createElement('i');
+                heart.className = `${isFav ? 'fa-solid' : 'fa-regular'} fa-heart text-base`;
+                favoriteButton.append(heart);
+                favoriteButton.addEventListener('click', event => { event.stopPropagation(); toggleFavorite(song.no); });
+                actionCell.append(favoriteButton);
+                row.append(noCell, titleCell, artistCell, actionCell);
+                fragment.append(row);
             }
-            container.innerHTML = html;
+            container.append(fragment);
         }
 
-        function highlightText(text, query) {
-            if (!query) return text;
-            try {
-                const escapedQuery = query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                const regex = new RegExp(`(${escapedQuery})`, 'gi');
-                return text.replace(regex, '<mark>$1</mark>');
-            } catch (e) {
-                return text;
+        function appendHighlightedText(element, text, query) {
+            const value = String(text ?? '');
+            const q = String(query ?? '').trim();
+            if (!userSettings.highlightSearch || !q) { element.textContent = value; return; }
+            const lower = value.toLocaleLowerCase();
+            const needle = q.toLocaleLowerCase();
+            let start = 0;
+            let found;
+            while ((found = lower.indexOf(needle, start)) !== -1) {
+                element.append(document.createTextNode(value.slice(start, found)));
+                const mark = document.createElement('mark');
+                mark.textContent = value.slice(found, found + needle.length);
+                element.append(mark);
+                start = found + needle.length;
             }
+            element.append(document.createTextNode(value.slice(start)));
         }
 
         // --- CSV / SongBundle File Processing Parser ---
-        function openUploadModal() { document.getElementById('upload-modal').classList.remove('hidden'); }
-        function closeUploadModal() { document.getElementById('upload-modal').classList.add('hidden'); }
-
-        async function handleFileSelected(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            await processFile(file);
-            event.target.value = '';
-        }
-
-        async function processFile(file) {
-            closeUploadModal();
-            showLoadingStatus("Parsing CSV File...", "Reading and indexing records into IndexedDB.");
-
-            try {
-                const text = await readFileAsText(file);
-                const songs = parseCSV(text);
-                
-                if (songs.length === 0) {
-                    showToast("No valid songs detected in CSV file", "error");
-                    hideLoadingState();
-                    return;
-                }
-
-                showLoadingStatus("Indexing Database...", `Saving ${songs.length.toLocaleString()} songs locally for instant queries.`);
-                await clearDatabase();
-                await insertSongsBatch(songs);
-                
-                hideLoadingState();
-                showToast(`Successfully loaded ${songs.length.toLocaleString()} songs!`, "success");
-                currentPage = 1;
-                performSearch();
-            } catch (err) {
-                console.error("CSV Parse error:", err);
-                showToast("Failed to parse CSV file format", "error");
-                hideLoadingState();
-            }
-        }
-
-        function readFileAsText(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = (e) => reject(e);
-                reader.readAsText(file);
-            });
-        }
-
+        // Parse the bundled CSV string from songs_bundle.js on first launch or restore.
         function parseCSV(text) {
-            const lines = text.split(/\r\n|\n/);
-            if (lines.length === 0) return [];
-
-            const firstLine = lines[0];
-            const delimiter = firstLine.includes(';') ? ';' : (firstLine.includes('\t') ? '\t' : ',');
-
-            let startIndex = 0;
-            let headers = [];
-            
-            const lowerFirst = firstLine.toLowerCase();
-            if (lowerFirst.includes('no') || lowerFirst.includes('title') || lowerFirst.includes('song') || lowerFirst.includes('number')) {
-                headers = parseCSVLine(firstLine, delimiter).map(h => h.toLowerCase().trim());
-                startIndex = 1;
-            }
-
-            let noIdx = headers.findIndex(h => h.includes('no') || h.includes('number') || h.includes('code'));
-            let titleIdx = headers.findIndex(h => h.includes('title') || h.includes('song'));
-            let artistIdx = headers.findIndex(h => h.includes('artist') || h.includes('singer') || h.includes('performer'));
-
-            if (noIdx === -1) noIdx = 0;
-            if (titleIdx === -1) titleIdx = 1;
-            if (artistIdx === -1) artistIdx = 2;
-
+            if (typeof text !== 'string' || !text.trim()) return [];
+            text = text.replace(/^\uFEFF/, ''); // Remove UTF-8 BOM.
+            const candidates = [',', ';', '\t'];
+            const delimiter = candidates.map(delim => ({ delim, count: parseCSVRecords(text, delim)[0]?.length || 0 }))
+                .sort((a, b) => b.count - a.count)[0].delim;
+            const records = parseCSVRecords(text, delimiter).filter(row => row.some(cell => String(cell).trim() !== ''));
+            if (!records.length) return [];
+            const normalizeHeader = value => String(value || '').toLocaleLowerCase().replace(/[\s_#.-]+/g, ' ').trim();
+            const first = records[0].map(normalizeHeader);
+            const noAliases = ['no', 'number', 'song no', 'song number', 'code', 'song code', 'id'];
+            const titleAliases = ['title', 'song', 'song title', 'name'];
+            const artistAliases = ['artist', 'singer', 'performer', 'artist name'];
+            const findHeader = aliases => first.findIndex(value => aliases.includes(value));
+            const noHeader = findHeader(noAliases), titleHeader = findHeader(titleAliases), artistHeader = findHeader(artistAliases);
+            const hasHeader = noHeader >= 0 || titleHeader >= 0 || artistHeader >= 0;
+            const headers = hasHeader ? first : [];
+            let noIdx = hasHeader ? (noHeader >= 0 ? noHeader : 0) : 0;
+            let titleIdx = hasHeader ? (titleHeader >= 0 ? titleHeader : 1) : 1;
+            let artistIdx = hasHeader ? (artistHeader >= 0 ? artistHeader : 2) : 2;
+            const start = hasHeader ? 1 : 0;
             const songs = [];
-            for (let i = startIndex; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-                
-                const cols = parseCSVLine(line, delimiter);
-                if (cols.length >= 2) {
-                    const no = (cols[noIdx] || '').trim();
-                    const title = (cols[titleIdx] || '').trim();
-                    const artist = (cols[artistIdx] || '').trim();
-
-                    if (no || title) {
-                        songs.push({ no, title, artist });
-                    }
-                }
+            for (let i = start; i < records.length; i++) {
+                const cols = records[i];
+                const no = String(cols[noIdx] ?? '').trim();
+                const title = String(cols[titleIdx] ?? '').trim();
+                const artist = String(cols[artistIdx] ?? '').trim();
+                if ((no || title) && !(normalizeHeader(no) === 'no' && normalizeHeader(title) === 'title')) songs.push({ no, title, artist });
             }
             return songs;
         }
 
-        function parseCSVLine(text, delimiter = ',') {
-            const result = [];
-            let inQuotes = false;
-            let current = '';
-            
+        // RFC-4180-style parser: quoted commas, escaped quotes, and quoted newlines are preserved.
+        function parseCSVRecords(text, delimiter = ',') {
+            const records = [];
+            let row = [], field = '', quoted = false;
             for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                if (char === '"') {
-                    if (inQuotes && text[i + 1] === '"') {
-                        current += '"';
-                        i++;
-                    } else {
-                        inQuotes = !inQuotes;
-                    }
-                } else if (char === delimiter && !inQuotes) {
-                    result.push(current.trim());
-                    current = '';
-                } else {
-                    current += char;
-                }
+                const ch = text[i];
+                if (ch === '"') {
+                    if (quoted && text[i + 1] === '"') { field += '"'; i++; }
+                    else quoted = !quoted;
+                } else if (ch === delimiter && !quoted) {
+                    row.push(field.trim()); field = '';
+                } else if ((ch === '\n' || ch === '\r') && !quoted) {
+                    if (ch === '\r' && text[i + 1] === '\n') i++;
+                    row.push(field.trim()); records.push(row); row = []; field = '';
+                } else field += ch;
             }
-            result.push(current.trim());
-            return result;
+            if (field.length || row.length) { row.push(field.trim()); records.push(row); }
+            return records;
         }
 
         // --- Settings Modal & Preferences ---
@@ -884,11 +785,11 @@
         }
 
         async function saveSettings() {
-            userSettings.rowsPerPage = parseInt(document.getElementById('setting-rows-per-page').value) || 50;
+            userSettings.rowsPerPage = Math.min(1000, Math.max(10, parseInt(document.getElementById('setting-rows-per-page').value, 10) || 50));
             userSettings.autoFocus = document.getElementById('setting-autofocus').checked;
             userSettings.highlightSearch = document.getElementById('setting-highlight').checked;
             
-            localStorage.setItem('songhub_settings', JSON.stringify(userSettings));
+            try { localStorage.setItem('songhub_settings', JSON.stringify(userSettings)); } catch (error) { console.warn('Could not save settings', error); showToast('Settings could not be saved in this browser', 'error'); }
             closeSettingsModal();
             showToast("Preferences saved successfully", "success");
             currentPage = 1;
@@ -896,13 +797,14 @@
         }
 
         async function resetToSongBundle() {
-            if (!confirm("Restore database back to default embedded song bundle?")) return;
+            if (!confirm("Restore the bundled SongHub catalog? This replaces the local catalog with the version included in this deployment.")) return;
             closeSettingsModal();
             showLoadingStatus("Restoring SongBundle...", "Reloading embedded SongHub song bundle.");
             try {
-                await clearDatabase();
+                if (typeof DEFAULT_CSV_DATA !== 'string' || !DEFAULT_CSV_DATA.trim()) throw new Error('Default song bundle is unavailable.');
                 const parsedSongs = parseCSV(DEFAULT_CSV_DATA);
-                await insertSongsBatch(parsedSongs);
+                await replaceSongsAtomic(parsedSongs);
+                await refreshSongCache();
                 hideLoadingState();
                 showToast("Restored default SongBundle catalog", "success");
                 currentPage = 1;
@@ -919,8 +821,10 @@
             showLoadingStatus("Clearing Cache...", "Wiping local song index.");
             try {
                 await clearDatabase();
+                songCache = [];
+                sortedSongCache = { no: [], title: [], artist: [] };
                 hideLoadingState();
-                showToast("Database cache cleared", "info");
+                showToast("Database cache cleared. Reload or restore the bundle to repopulate it.", "info");
                 currentPage = 1;
                 performSearch();
             } catch (err) {
@@ -930,6 +834,11 @@
         }
 
         // --- Favorites Management ---
+        function persistFavorites() {
+            try { localStorage.setItem('songhub_favorites', JSON.stringify(Array.from(favorites))); }
+            catch (error) { console.warn('Could not persist favorites', error); showToast('Favorites changed for this session but could not be saved', 'error'); }
+        }
+
         function toggleFavorite(no) {
             if (favorites.has(no)) {
                 favorites.delete(no);
@@ -938,7 +847,7 @@
                 favorites.add(no);
                 showToast("Added to favorites!", "success");
             }
-            localStorage.setItem('songhub_favorites', JSON.stringify(Array.from(favorites)));
+            persistFavorites();
             updateFavoritesBadge();
             performSearch();
             if (currentModalSong && currentModalSong.no === no) {
@@ -1038,7 +947,8 @@
         }
 
         function initTheme() {
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            let savedTheme = null; try { savedTheme = localStorage.getItem('theme'); } catch (error) { /* storage may be disabled */ }
+            if (savedTheme === 'dark' || (savedTheme === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
             } else {
                 document.documentElement.classList.remove('dark');
@@ -1048,10 +958,10 @@
         function toggleDarkMode() {
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
-                localStorage.theme = 'light';
+                try { localStorage.setItem('theme', 'light'); } catch (error) { console.warn('Could not save theme', error); }
             } else {
                 document.documentElement.classList.add('dark');
-                localStorage.theme = 'dark';
+                try { localStorage.setItem('theme', 'dark'); } catch (error) { console.warn('Could not save theme', error); }
             }
         }
 
