@@ -664,7 +664,8 @@
                 noCell.className = 'song-no col-span-3 sm:col-span-2 font-mono font-bold text-pink-600 dark:text-pink-400';
                 appendHighlightedText(noCell, song.no, currentSearchQuery);
                 const titleCell = document.createElement('div');
-                titleCell.className = 'col-span-5 sm:col-span-5 font-semibold text-slate-900 dark:text-white pr-2 truncate';
+                titleCell.className = 'col-span-5 sm:col-span-5 min-w-0 font-semibold text-slate-900 dark:text-white pr-2 py-2 whitespace-normal break-words leading-snug';
+                titleCell.style.overflowWrap = 'anywhere';
                 titleCell.title = song.title;
                 appendHighlightedText(titleCell, song.title, currentSearchQuery);
                 const artistCell = document.createElement('div');
